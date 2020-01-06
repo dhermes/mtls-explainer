@@ -23,6 +23,7 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
@@ -34,9 +35,21 @@ import (
 	"path/filepath"
 )
 
-func helloHandler(w http.ResponseWriter, r *http.Request) {
-	// Write "Hello, world!" to the response body
-	io.WriteString(w, "Hello, world!\n")
+func makeHelloHandler(beginShutdown chan struct{}) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		io.WriteString(w, "Hello, world!\n")
+		close(beginShutdown)
+	}
+}
+
+func shutdownServer(server *http.Server, beginShutdown, shutdownComplete chan struct{}) {
+	<-beginShutdown
+
+	if err := server.Shutdown(context.Background()); err != nil {
+		log.Fatalf("Failed shutting down: %v", err)
+	}
+
+	close(shutdownComplete)
 }
 
 func tlsKeyPaths(args []string) (rootCAPath, certPath, keyPath string, err error) {
@@ -76,8 +89,12 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Channels to coordinate server shutdown.
+	beginShutdown := make(chan struct{})
+	shutdownComplete := make(chan struct{})
+
 	// Set up a /hello resource handler
-	http.HandleFunc("/hello", helloHandler)
+	http.HandleFunc("/hello", makeHelloHandler(beginShutdown))
 
 	// Create a CA certificate pool and add certificate to it
 	caCert, err := ioutil.ReadFile(rootCAPath)
@@ -99,7 +116,12 @@ func main() {
 		Addr:      ":8443",
 		TLSConfig: tlsConfig,
 	}
+	go shutdownServer(server, beginShutdown, shutdownComplete)
 
 	// Listen to HTTPS connections with the server certificate and wait
-	log.Fatal(server.ListenAndServeTLS(certPath, keyPath))
+	if err := server.ListenAndServeTLS(certPath, keyPath); err != http.ErrServerClosed {
+		log.Fatalf("Failed listen and serve: %v", err)
+	}
+
+	<-shutdownComplete
 }
