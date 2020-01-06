@@ -37,6 +37,7 @@ import (
 
 func makeHelloHandler(beginShutdown chan struct{}) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("Handling request for %s\n", r.URL.Path)
 		io.WriteString(w, "Hello, world!\n")
 		close(beginShutdown)
 	}
@@ -112,13 +113,15 @@ func main() {
 	tlsConfig.BuildNameToCertificate()
 
 	// Create a Server instance to listen on port 8443 with the TLS config
+	addr := ":8443"
 	server := &http.Server{
-		Addr:      ":8443",
+		Addr:      addr,
 		TLSConfig: tlsConfig,
 	}
 	go shutdownServer(server, beginShutdown, shutdownComplete)
 
 	// Listen to HTTPS connections with the server certificate and wait
+	fmt.Printf("Listening on %s\n", addr)
 	if err := server.ListenAndServeTLS(certPath, keyPath); err != http.ErrServerClosed {
 		log.Fatalf("Failed listen and serve: %v", err)
 	}

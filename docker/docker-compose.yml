@@ -1,0 +1,41 @@
+---
+version: '3.7'
+
+services:
+  server:
+    image: golang:1.13.5-alpine
+    volumes:
+      - ../cmd/server/main.go:/var/code/main.go
+      - ../docker/tls-certs:/var/tls-certs
+    networks:
+      - service-net
+    command:
+      - go
+      - run
+      - /var/code/main.go
+      - /var/tls-certs/rootCA-cert.pem
+      - /var/tls-certs/localhost-server-cert.pem
+      - /var/tls-certs/localhost-server-key.pem
+
+  client:
+    image: golang:1.13.5-alpine
+    volumes:
+      - ../cmd/client/main.go:/var/code/main.go
+      - ../docker/tls-certs:/var/tls-certs
+    depends_on:
+      - server
+    environment:
+      - MTLS_SERVER_HOSTNAME=server
+    networks:
+      - service-net
+    command:
+      - go
+      - run
+      - /var/code/main.go
+      - /var/tls-certs/rootCA-cert.pem
+      - /var/tls-certs/localhost-client-cert.pem
+      - /var/tls-certs/localhost-client-key.pem
+
+networks:
+  service-net:
+    internal: true

@@ -64,6 +64,15 @@ func tlsKeyPaths(args []string) (rootCAPath, certPath, keyPath string, err error
 	return
 }
 
+func getHostname() string {
+	hostname, ok := os.LookupEnv("MTLS_SERVER_HOSTNAME")
+	if ok {
+		return hostname
+	}
+
+	return "localhost"
+}
+
 func main() {
 	rootCAPath, certPath, keyPath, err := tlsKeyPaths(os.Args)
 	if err != nil {
@@ -95,7 +104,9 @@ func main() {
 	}
 
 	// Request /hello via the created HTTPS client over port 8443 via GET
-	r, err := client.Get("https://localhost:8443/hello")
+	hostname := getHostname()
+	url := fmt.Sprintf("https://%s:8443/hello", hostname)
+	r, err := client.Get(url)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -108,5 +119,5 @@ func main() {
 	}
 
 	// Print the response body to stdout
-	fmt.Printf("%s\n", body)
+	fmt.Printf("Received: %q\n", body)
 }
