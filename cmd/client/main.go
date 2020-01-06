@@ -64,6 +64,18 @@ func tlsKeyPaths(args []string) (rootCAPath, certPath, keyPath string, err error
 	return
 }
 
+// getPort returns the port to connect to (as a string). If the `MTLS_SERVER_PORT`
+// environment variable is provided, this will be used (but not verified as
+// a valid port).
+func getPort() string {
+	port, ok := os.LookupEnv("MTLS_SERVER_PORT")
+	if ok {
+		return port
+	}
+
+	return "8443"
+}
+
 func getHostname() string {
 	hostname, ok := os.LookupEnv("MTLS_SERVER_HOSTNAME")
 	if ok {
@@ -103,9 +115,10 @@ func main() {
 		},
 	}
 
-	// Request /hello via the created HTTPS client over port 8443 via GET
+	// Request /hello via the created HTTPS client via GET
 	hostname := getHostname()
-	url := fmt.Sprintf("https://%s:8443/hello", hostname)
+	port := getPort()
+	url := fmt.Sprintf("https://%s:%s/hello", hostname, port)
 	r, err := client.Get(url)
 	if err != nil {
 		log.Fatal(err)

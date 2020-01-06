@@ -84,6 +84,18 @@ func tlsKeyPaths(args []string) (rootCAPath, certPath, keyPath string, err error
 	return
 }
 
+// getPort returns the port to connect to (as a string). If the `MTLS_SERVER_PORT`
+// environment variable is provided, this will be used (but not verified as
+// a valid port).
+func getPort() string {
+	port, ok := os.LookupEnv("MTLS_SERVER_PORT")
+	if ok {
+		return port
+	}
+
+	return "8443"
+}
+
 func main() {
 	rootCAPath, certPath, keyPath, err := tlsKeyPaths(os.Args)
 	if err != nil {
@@ -112,8 +124,8 @@ func main() {
 	}
 	tlsConfig.BuildNameToCertificate()
 
-	// Create a Server instance to listen on port 8443 with the TLS config
-	addr := ":8443"
+	// Create a Server instance to listen with the TLS config
+	addr := fmt.Sprintf(":%s", getPort())
 	server := &http.Server{
 		Addr:      addr,
 		TLSConfig: tlsConfig,

@@ -7,6 +7,8 @@ services:
     volumes:
       - ../cmd/server/main.go:/var/code/main.go
       - ../docker/tls-certs:/var/tls-certs
+    environment:
+      - MTLS_SERVER_PORT=18443
     networks:
       - service-net
     command:
@@ -25,6 +27,7 @@ services:
     depends_on:
       - server
     environment:
+      - MTLS_SERVER_PORT=18443
       - MTLS_SERVER_HOSTNAME=server
     networks:
       - service-net
