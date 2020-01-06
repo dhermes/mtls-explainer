@@ -30,8 +30,16 @@ rm -f "${CAROOT}/rootCA-cert.pem" "${CAROOT}/rootCA-key.pem"
 # (Re-)generate keys for `localhost`, store them **in** the CA root directory,
 # which is expected to be a shared volume with the host.
 cd "${CAROOT}"
-mkcert --cert-file localhost-client-cert.pem --key-file localhost-client-key.pem localhost
-mkcert --cert-file localhost-server-cert.pem --key-file localhost-server-key.pem localhost
+mkcert \
+  --client \
+  --cert-file localhost-client-cert.pem \
+  --key-file  localhost-client-key.pem \
+  localhost
+mkcert \
+  --client \
+  --cert-file localhost-server-cert.pem \
+  --key-file  localhost-server-key.pem \
+  localhost
 
 # Rename the root CA cert (for the benefit of the shared volume on the host).
 mv "${CAROOT}/rootCA.pem" "${CAROOT}/rootCA-cert.pem"
