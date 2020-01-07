@@ -51,16 +51,19 @@ docker-compose \
 This should produce output similar to:
 
 ```
-Creating network "docker_service-net" with the default driver
+...
+Successfully tagged dhermes/mtls-explainer-proxy:latest
 Creating docker_server_1 ... done
+Creating docker_proxy_1  ... done
 Creating docker_client_1 ... done
-Attaching to docker_server_1, docker_client_1
-server_1  | Listening on :8443
+Attaching to docker_server_1, docker_proxy_1, docker_client_1
+proxy_1   | Running TCP pass through proxy from :28443 to server:18443
+server_1  | Listening on :18443
 server_1  | Handling request for /hello
 client_1  | Received: "Hello, world!\n"
-docker_client_1 exited with code 0
+docker_server_1 exited with code 0
 Aborting on container exit...
-Stopping docker_server_1 ... done
+Stopping docker_proxy_1  ... done
 ```
 
 To clean up:
