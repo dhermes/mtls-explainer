@@ -35,14 +35,14 @@ mkcert \
   --cert-file localhost-client-cert.pem \
   --key-file  localhost-client-key.pem \
   localhost
-# NOTE: `server` is also a valid hostname so that the certificate may be used
-#       within Dockerized networks where `localhost` can't be used across
-#       containers.
+# NOTE: `server` and `proxy` are also valid hostnames so that the certificate
+#       may be used within Dockerized networks where `localhost` can't be used
+#       across containers.
 mkcert \
   --client \
   --cert-file localhost-server-cert.pem \
   --key-file  localhost-server-key.pem \
-  localhost server
+  localhost server proxy
 
 # Rename the root CA cert (for the benefit of the shared volume on the host).
 mv "${CAROOT}/rootCA.pem" "${CAROOT}/rootCA-cert.pem"
