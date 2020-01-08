@@ -85,3 +85,9 @@ serial=CC6880577A039A6185EDFD28D5698429
 $ openssl x509 -in ./docker/tls-certs/localhost-server-cert.pem -serial -noout
 serial=67ADFF08C978DA5FDB11058AE70E1534
 ```
+
+
+Used:
+
+https://redflagsecurity.net/2019/03/10/decrypting-tls-wireshark/ <-- uses `sslkeylog.log` to get session keys to decrypt
+Also added `localhost-server-key.pem` as an RSA key to the SSL protocol with `http` as the interceptor
