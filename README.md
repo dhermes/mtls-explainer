@@ -91,3 +91,8 @@ Used:
 
 https://redflagsecurity.net/2019/03/10/decrypting-tls-wireshark/ <-- uses `sslkeylog.log` to get session keys to decrypt
 Also added `localhost-server-key.pem` as an RSA key to the SSL protocol with `http` as the interceptor
+
+https://hpbn.co/transport-layer-security-tls/
+https://www.cloudflare.com/learning/ssl/what-happens-in-a-tls-handshake/
+https://blog.cloudflare.com/logjam-the-latest-tls-vulnerability-explained/
+https://www.thesslstore.com/blog/explaining-ssl-handshake/
