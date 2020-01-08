@@ -25,14 +25,18 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+)
+
+// NOTE: Ensure that
+//       * randSource satisfies io.Reader
+var (
+	_ io.Reader = randSource{}
 )
 
 func makeHelloHandler(beginShutdown chan struct{}) func(w http.ResponseWriter, r *http.Request) {
@@ -96,8 +100,26 @@ func getPort() string {
 	return "8443"
 }
 
+// TODO: Move `randSource` into `github.com/dhermes/mtls-explainer/pkg`
+// randSource is an io.Reader that returns an unlimited number of 0xa3 bytes.
+// It is used as a (bad and insecure) source of randomness for the TLS transport.
+// From https://github.com/golang/go/blob/go1.13.5/src/crypto/tls/example_test.go#L17
+// Regarding `KeyLogWriter`, see also:
+// https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS/Key_Log_Format
+// In particular, the keylog lines are of the form
+// fmt.Sprintf("%s %s %s", label, clientRandom, secret)
+type randSource struct{}
+
+func (randSource) Read(b []byte) (n int, err error) {
+	for i := range b {
+		b[i] = '\xa3'
+	}
+
+	return len(b), nil
+}
+
 func main() {
-	rootCAPath, certPath, keyPath, err := tlsKeyPaths(os.Args)
+	_, certPath, keyPath, err := tlsKeyPaths(os.Args)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -109,18 +131,20 @@ func main() {
 	// Set up a /hello resource handler
 	http.HandleFunc("/hello", makeHelloHandler(beginShutdown))
 
-	// Create a CA certificate pool and add certificate to it
-	caCert, err := ioutil.ReadFile(rootCAPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	caCertPool := x509.NewCertPool()
-	caCertPool.AppendCertsFromPEM(caCert)
+	// // Create a CA certificate pool and add certificate to it
+	// caCert, err := ioutil.ReadFile(rootCAPath)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// caCertPool := x509.NewCertPool()
+	// caCertPool.AppendCertsFromPEM(caCert)
 
 	// Create the TLS Config with the CA pool and enable Client certificate validation
 	tlsConfig := &tls.Config{
-		ClientCAs:  caCertPool,
-		ClientAuth: tls.RequireAndVerifyClientCert,
+		// ClientCAs:  caCertPool,
+		// ClientAuth: tls.RequireAndVerifyClientCert,
+		Rand: randSource{}, // Eliminate randomness, **INSECURE**!
+		// KeyLogWriter: os.Stdout,
 	}
 	tlsConfig.BuildNameToCertificate()
 

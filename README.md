@@ -76,3 +76,12 @@ docker-compose \
 
 [1]: https://venilnoronha.io/a-step-by-step-guide-to-mtls-in-go
 [2]: https://github.com/FiloSottile/mkcert
+
+
+
+```
+$ openssl x509 -in ./docker/tls-certs/localhost-client-cert.pem -serial -noout
+serial=CC6880577A039A6185EDFD28D5698429
+$ openssl x509 -in ./docker/tls-certs/localhost-server-cert.pem -serial -noout
+serial=67ADFF08C978DA5FDB11058AE70E1534
+```

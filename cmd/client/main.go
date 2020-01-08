@@ -26,11 +26,18 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+)
+
+// NOTE: Ensure that
+//       * randSource satisfies io.Reader
+var (
+	_ io.Reader = randSource{}
 )
 
 func tlsKeyPaths(args []string) (rootCAPath, certPath, keyPath string, err error) {
@@ -85,17 +92,33 @@ func getHostname() string {
 	return "localhost"
 }
 
+// TODO: Move `randSource` into `github.com/dhermes/mtls-explainer/pkg`
+// randSource is an io.Reader that returns an unlimited number of 0x3a bytes.
+// It is used as a (bad and insecure) source of randomness for the TLS transport.
+// From https://github.com/golang/go/blob/go1.13.5/src/crypto/tls/example_test.go#L17
+// Regarding `KeyLogWriter`, see also:
+// https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS/Key_Log_Format
+type randSource struct{}
+
+func (randSource) Read(b []byte) (n int, err error) {
+	for i := range b {
+		b[i] = '\x3a'
+	}
+
+	return len(b), nil
+}
+
 func main() {
-	rootCAPath, certPath, keyPath, err := tlsKeyPaths(os.Args)
+	rootCAPath, _, _, err := tlsKeyPaths(os.Args)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Read the key pair to create certificate
-	cert, err := tls.LoadX509KeyPair(certPath, keyPath)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// // Read the key pair to create certificate
+	// cert, err := tls.LoadX509KeyPair(certPath, keyPath)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 
 	// Create a CA certificate pool and add certificate to it
 	caCert, err := ioutil.ReadFile(rootCAPath)
@@ -106,11 +129,20 @@ func main() {
 	caCertPool.AppendCertsFromPEM(caCert)
 
 	// Create a HTTPS client and supply the created CA pool and certificate
+	keyLog := "/Users/dhermes/workspace/mtls-explainer/sslkeylog.log"
+	w, err := os.OpenFile(keyLog, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
-				RootCAs:      caCertPool,
-				Certificates: []tls.Certificate{cert},
+				RootCAs: caCertPool,
+				// Certificates: []tls.Certificate{cert},
+				Rand:         randSource{}, // Eliminate randomness, **INSECURE**!
+				KeyLogWriter: w,
+				// KeyLogWriter: os.Stdout,
 			},
 		},
 	}
