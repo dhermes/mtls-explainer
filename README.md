@@ -96,6 +96,9 @@ https://hpbn.co/transport-layer-security-tls/
 https://www.cloudflare.com/learning/ssl/what-happens-in-a-tls-handshake/
 https://blog.cloudflare.com/logjam-the-latest-tls-vulnerability-explained/
 https://www.thesslstore.com/blog/explaining-ssl-handshake/
+https://github.com/syncsynchalt/illustrated-tls/issues/6
+https://robertheaton.com/2014/03/27/how-does-https-actually-work/
+https://robertheaton.com/2018/08/31/how-to-build-a-tcp-proxy-4/
 
 To "automatically" modify SSL protocol settings:
 
